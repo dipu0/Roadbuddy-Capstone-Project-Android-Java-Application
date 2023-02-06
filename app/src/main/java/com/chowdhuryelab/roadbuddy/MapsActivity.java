@@ -1,5 +1,6 @@
 package com.chowdhuryelab.roadbuddy;
 
+import androidx.annotation.NonNull;
 import androidx.core.app.ActivityCompat;
 import androidx.core.app.NotificationCompat;
 import androidx.fragment.app.FragmentActivity;
@@ -18,6 +19,7 @@ import android.os.Build;
 import android.os.Bundle;
 import android.widget.Toast;
 
+import com.chowdhuryelab.roadbuddy.Interface.IOnLoadLocationListener;
 import com.firebase.geofire.GeoFire;
 import com.firebase.geofire.GeoLocation;
 import com.firebase.geofire.GeoQuery;
@@ -33,9 +35,14 @@ import com.google.android.gms.maps.model.CircleOptions;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
+import com.google.android.gms.tasks.OnCompleteListener;
+import com.google.android.gms.tasks.OnFailureListener;
+import com.google.android.gms.tasks.Task;
+import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
+import com.google.firebase.database.ValueEventListener;
 import com.karumi.dexter.Dexter;
 import com.karumi.dexter.PermissionToken;
 import com.karumi.dexter.listener.PermissionDeniedResponse;
@@ -47,7 +54,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
 
-public class MapsActivity extends FragmentActivity implements OnMapReadyCallback, GeoQueryEventListener {
+public class MapsActivity extends FragmentActivity implements OnMapReadyCallback, GeoQueryEventListener, IOnLoadLocationListener {
 
     private GoogleMap mMap;
 
@@ -58,6 +65,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     DatabaseReference myLocationRef;
     GeoFire geoFire;
     List<LatLng> dangerousArea = new ArrayList<>();
+    IOnLoadLocationListener listener;
 
     String lat = "", lon = "";
 
@@ -78,11 +86,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                 .withListener(new PermissionListener() {
                     @Override
                     public void onPermissionGranted(PermissionGrantedResponse response) {
-                        SupportMapFragment mapFragment = (SupportMapFragment) getSupportFragmentManager()
-                                .findFragmentById(R.id.map);
-                        mapFragment.getMapAsync(MapsActivity.this);
                         updateLocation();
-
                         initArea();
                         settingGeoFire();
                     }
@@ -101,10 +105,49 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     }
 
     private void initArea() {
-        dangerousArea.add(new LatLng(23.70043,90.43728));
-        dangerousArea.add(new LatLng(23.70039,90.43729));
-        dangerousArea.add(new LatLng(23.70044,90.43722));
-        }
+        listener = this;
+        //load from firebase
+        FirebaseDatabase.getInstance()
+                .getReference("DangerousArea")
+                .child("MyCity")
+                .addListenerForSingleValueEvent(new ValueEventListener() {
+                    @Override
+                    public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
+                        List<MyLatLng> latLngList = new ArrayList<>();
+                        for(DataSnapshot locationSnapShot: dataSnapshot.getChildren())
+                        {
+                            MyLatLng latLng = locationSnapShot.getValue(MyLatLng.class);
+                            latLngList.add(latLng);
+                        }
+                        listener.onLoadLocationSuccess(latLngList);
+                    }
+
+                    @Override
+                    public void onCancelled(@NonNull DatabaseError databaseError) {
+                        listener.onLoadLocationFailed(databaseError.getMessage());
+                    }
+                });
+//        dangerousArea.add(new LatLng(23.70043,90.43728));
+//        dangerousArea.add(new LatLng(23.70039,90.43729));
+//        dangerousArea.add(new LatLng(23.70044,90.43722));
+
+        //we are submitting above location to our firebase data
+//        FirebaseDatabase.getInstance()
+//                .getReference("DangerousArea")
+//                .child("MyCity")
+//                .setValue(dangerousArea)
+//                .addOnCompleteListener(new OnCompleteListener<Void>() {
+//                    @Override
+//                    public void onComplete(@NonNull Task<Void> task) {
+//                        Toast.makeText(MapsActivity.this,"Updated!",Toast.LENGTH_SHORT).show();
+//                    }
+//                }).addOnFailureListener(new OnFailureListener() {
+//                    @Override
+//                    public void onFailure(@NonNull Exception e) {
+//                        Toast.makeText(MapsActivity.this,""+e.getMessage(),Toast.LENGTH_SHORT).show();
+//                    }
+//                });
+       }
 
 
     private void settingGeoFire() {
@@ -138,9 +181,9 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     private void buildLocationRequest() {
         locationRequest = new LocationRequest();
         locationRequest.setPriority(LocationRequest.PRIORITY_HIGH_ACCURACY);
-        locationRequest.setInterval(5000);
-        locationRequest.setFastestInterval(3000);
-        locationRequest.setSmallestDisplacement(1f);
+        locationRequest.setInterval(3000);
+        locationRequest.setFastestInterval(1000);
+        locationRequest.setSmallestDisplacement(0.5f);
     }
 
     /**
@@ -170,8 +213,8 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         }
 
 
-        // Add a marker in Sydney and move the camera
-//        LatLng sydney = new LatLng(-34, 151);
+        // Add a marker in Dholaipar and move the camera
+//        LatLng dholaipar = new LatLng(23.70043, 90.43728);
 //        mMap.addMarker(new MarkerOptions().position(sydney).title("Marker in Sydney"));
 //        mMap.moveCamera(CameraUpdateFactory.newLatLng(sydney));
     }
@@ -273,5 +316,24 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     @Override
     public void onGeoQueryError(DatabaseError error) {
         Toast.makeText(getApplicationContext(), error.getMessage() , Toast.LENGTH_SHORT).show();
+    }
+
+    @Override
+    public void onLoadLocationSuccess(List<MyLatLng> latLngs) {
+        dangerousArea = new ArrayList<>();
+        for(MyLatLng myLatLng: latLngs)
+        {
+            LatLng convert = new LatLng(myLatLng.getLatitude(), myLatLng.getLongitude());
+            dangerousArea.add(convert);
+        }
+        //Now, after dangerous Area is have data, We will call map display
+        SupportMapFragment mapFragment = (SupportMapFragment) getSupportFragmentManager()
+                .findFragmentById(R.id.map);
+        mapFragment.getMapAsync(MapsActivity.this);
+    }
+
+    @Override
+    public void onLoadLocationFailed(String message) {
+        Toast.makeText(MapsActivity.this,""+message,Toast.LENGTH_SHORT).show();
     }
 }
