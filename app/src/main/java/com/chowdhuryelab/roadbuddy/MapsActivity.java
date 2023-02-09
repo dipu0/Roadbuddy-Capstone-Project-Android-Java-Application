@@ -13,6 +13,7 @@ import android.app.PendingIntent;
 import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
+import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Color;
 import android.os.Build;
@@ -31,6 +32,7 @@ import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.SupportMapFragment;
+import com.google.android.gms.maps.model.BitmapDescriptorFactory;
 import com.google.android.gms.maps.model.CircleOptions;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.Marker;
@@ -65,6 +67,8 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     DatabaseReference myLocationRef;
     GeoFire geoFire;
     List<LatLng> dangerousArea = new ArrayList<>();
+    List<MyLatLng> updatedangerousArea = new ArrayList<>();
+    List<MyLatLng> MapDangerousArea = new ArrayList<>();
     IOnLoadLocationListener listener;
 
     String lat = "", lon = "";
@@ -127,15 +131,14 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                         listener.onLoadLocationFailed(databaseError.getMessage());
                     }
                 });
-//        dangerousArea.add(new LatLng(23.70043,90.43728));
-//        dangerousArea.add(new LatLng(23.70039,90.43729));
-//        dangerousArea.add(new LatLng(23.70044,90.43722));
-
-        //we are submitting above location to our firebase data
+//        updatedangerousArea.add(new MyLatLng(23.70039,90.43729,"SpeedBreaker"));
+//        updatedangerousArea.add(new MyLatLng(23.70044,90.43722,"Pothole"));
+//
+//       // we are submitting above location to our firebase data
 //        FirebaseDatabase.getInstance()
 //                .getReference("DangerousArea")
 //                .child("MyCity")
-//                .setValue(dangerousArea)
+//                .setValue(updatedangerousArea)
 //                .addOnCompleteListener(new OnCompleteListener<Void>() {
 //                    @Override
 //                    public void onComplete(@NonNull Task<Void> task) {
@@ -200,15 +203,33 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         mMap = googleMap;
         mMap.getUiSettings().setZoomControlsEnabled(true);
 
-        for (LatLng latlng : dangerousArea){
-            mMap.addCircle(new CircleOptions().center(latlng)
+        for (MyLatLng mylatLng : MapDangerousArea){
+            LatLng convert = new LatLng(mylatLng.getLatitude(), mylatLng.getLongitude());
+            String type = new String(mylatLng.getType());
+
+            if(type.equals("Pothole")){
+                mMap.addMarker(new MarkerOptions()
+                        .position(convert)
+                        .title("Pothole")
+                        .snippet("Snippet")
+                        .icon(BitmapDescriptorFactory.fromResource(R.drawable.pothole)));
+            }
+            if(type.equals("SpeedBreaker")){
+                mMap.addMarker(new MarkerOptions()
+                        .position(convert)
+                        .title("SpeedBreaker")
+                        .snippet("Snippet")
+                        .icon(BitmapDescriptorFactory.fromResource(R.drawable.speedbreaker)));
+            }
+
+            mMap.addCircle(new CircleOptions().center(convert)
                     .radius(1)
                     .strokeColor(Color.RED)
                     .fillColor(0x220000FF)
                     .strokeWidth(2.0f)
             );
 //            Toast.makeText(getApplicationContext(),"" + latlng.latitude , Toast.LENGTH_SHORT).show();
-            GeoQuery geoQuery = geoFire.queryAtLocation(new GeoLocation(latlng.latitude, latlng.longitude), 0.5f);
+            GeoQuery geoQuery = geoFire.queryAtLocation(new GeoLocation(convert.latitude, convert.longitude), 0.5f);
             geoQuery.addGeoQueryEventListener(MapsActivity.this);
         }
 
@@ -320,12 +341,13 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 
     @Override
     public void onLoadLocationSuccess(List<MyLatLng> latLngs) {
-        dangerousArea = new ArrayList<>();
-        for(MyLatLng myLatLng: latLngs)
-        {
-            LatLng convert = new LatLng(myLatLng.getLatitude(), myLatLng.getLongitude());
-            dangerousArea.add(convert);
-        }
+        MapDangerousArea = new ArrayList<>();
+        MapDangerousArea=(latLngs);
+//        for(MyLatLng myLatLng: latLngs)
+//        {
+//            LatLng convert = new LatLng(myLatLng.getLatitude(), myLatLng.getLongitude());
+//            dangerousArea.add(convert);
+//        }
         //Now, after dangerous Area is have data, We will call map display
         SupportMapFragment mapFragment = (SupportMapFragment) getSupportFragmentManager()
                 .findFragmentById(R.id.map);
@@ -335,5 +357,10 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     @Override
     public void onLoadLocationFailed(String message) {
         Toast.makeText(MapsActivity.this,""+message,Toast.LENGTH_SHORT).show();
+    }
+
+    public Bitmap resizeBitmap(String drawableName, int width, int height){
+        Bitmap imageBitmap = BitmapFactory.decodeResource(getResources(),getResources().getIdentifier(drawableName, "drawable", getPackageName()));
+        return Bitmap.createScaledBitmap(imageBitmap, width, height, false);
     }
 }
