@@ -7,13 +7,18 @@ import android.os.Bundle;
 import android.view.View;
 import android.widget.Button;
 
-public class MainActivity extends AppCompatActivity {
+import com.chowdhuryelab.roadbuddy.databinding.ActivityMainBinding;
 
+public class MainActivity extends DrawerBaseActivity {
+
+ActivityMainBinding activityMainBinding;
     Button map;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_main);
+        activityMainBinding = ActivityMainBinding.inflate(getLayoutInflater());
+        allocateActivityTitle("MainActivity");
+        setContentView(activityMainBinding.getRoot());
         map = findViewById(R.id.button);
 
         map.setOnClickListener(new View.OnClickListener() {
