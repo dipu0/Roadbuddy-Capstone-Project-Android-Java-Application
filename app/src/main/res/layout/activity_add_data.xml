@@ -12,10 +12,12 @@
         android:orientation="horizontal"
         android:gravity="center">
         <ImageButton
+            android:id="@+id/pothole"
             android:layout_width="150dp"
             android:layout_height="150dp"
             android:src="@drawable/pothole"/>
         <ImageButton
+            android:id="@+id/speedbreaker"
             android:layout_width="150dp"
             android:layout_height="150dp"
             android:src="@drawable/speedbreaker"/>

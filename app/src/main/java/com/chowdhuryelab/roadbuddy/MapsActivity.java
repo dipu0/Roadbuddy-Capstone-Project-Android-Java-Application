@@ -17,6 +17,8 @@ import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.graphics.BitmapFactory;
 import android.graphics.Color;
+import android.location.Location;
+import android.location.LocationManager;
 import android.media.MediaPlayer;
 import android.os.Build;
 import android.os.Bundle;
@@ -80,6 +82,8 @@ public class MapsActivity extends DrawerBaseActivity implements OnMapReadyCallba
     String lat = "", lon = "";
 
     private MediaPlayer alertSound;
+    LocationManager locationManager = null;
+    Location location;
 
     public static MapsActivity getInstance() {
         return instance;
@@ -100,6 +104,7 @@ public class MapsActivity extends DrawerBaseActivity implements OnMapReadyCallba
                 .withListener(new PermissionListener() {
                     @Override
                     public void onPermissionGranted(PermissionGrantedResponse response) {
+
                         //Now, after dangerous Area is have data, We will call map display
                         SupportMapFragment mapFragment = (SupportMapFragment) getSupportFragmentManager()
                                 .findFragmentById(R.id.map);
@@ -108,6 +113,7 @@ public class MapsActivity extends DrawerBaseActivity implements OnMapReadyCallba
                         updateLocation();
                         initArea();
                         settingGeoFire();
+
                     }
 
                     @Override
@@ -200,7 +206,7 @@ public class MapsActivity extends DrawerBaseActivity implements OnMapReadyCallba
     private void buildLocationRequest() {
         locationRequest = new LocationRequest();
         locationRequest.setPriority(LocationRequest.PRIORITY_HIGH_ACCURACY);
-        locationRequest.setInterval(100000);
+        locationRequest.setInterval(10000);
         locationRequest.setFastestInterval(2000);
         locationRequest.setSmallestDisplacement(2f);
     }
@@ -245,7 +251,7 @@ public class MapsActivity extends DrawerBaseActivity implements OnMapReadyCallba
                     .strokeWidth(2.0f)
             );
 //            Toast.makeText(getApplicationContext(),"" + latlng.latitude , Toast.LENGTH_SHORT).show();
-            GeoQuery geoQuery = geoFire.queryAtLocation(new GeoLocation(convert.latitude, convert.longitude), 1f);
+            GeoQuery geoQuery = geoFire.queryAtLocation(new GeoLocation(convert.latitude, convert.longitude), 2f);
             geoQuery.addGeoQueryEventListener(MapsActivity.this);
         }
 
@@ -274,7 +280,7 @@ public class MapsActivity extends DrawerBaseActivity implements OnMapReadyCallba
                 //Toast.makeText(getApplicationContext(),s,Toast.LENGTH_SHORT).show();
                 if(mMap != null){
 
-                    geoFire.setLocation("Keyy", new GeoLocation(Double.parseDouble(latitude), Double.parseDouble(longitude)),
+                    geoFire.setLocation("Key", new GeoLocation(Double.parseDouble(latitude), Double.parseDouble(longitude)),
                             new GeoFire.CompletionListener() {
                                 @Override
                                 public void onComplete(String key, DatabaseError error) {
@@ -284,7 +290,7 @@ public class MapsActivity extends DrawerBaseActivity implements OnMapReadyCallba
                                             .title("You"));
 
                                     mMap.animateCamera(CameraUpdateFactory
-                                            .newLatLngZoom(currentUser.getPosition(), 100.0f));
+                                            .newLatLngZoom(currentUser.getPosition(), 60.0f));
                                 }
                             }
                     );
@@ -397,7 +403,7 @@ public class MapsActivity extends DrawerBaseActivity implements OnMapReadyCallba
         builder.setContentTitle(title)
                 .setContentText(content)
                 .setAutoCancel(true)
-                .setSmallIcon(R.mipmap.ic_launcher)
+                .setSmallIcon(R.drawable.logo1)
                 .setLargeIcon(BitmapFactory.decodeResource(getResources(),R.mipmap.ic_launcher));
         Notification notification = builder.build();
         notificationManager.notify(new Random().nextInt(), notification);
