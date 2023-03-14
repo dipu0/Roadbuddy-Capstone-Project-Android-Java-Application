@@ -17,6 +17,9 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.RoadBuddy">
         <activity
+            android:name=".TrafficSignActivity"
+            android:exported="false" />
+        <activity
             android:name=".AddDataActivity"
             android:exported="false" />
         <activity

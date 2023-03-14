@@ -62,6 +62,11 @@ public class DrawerBaseActivity extends AppCompatActivity implements NavigationV
                 overridePendingTransition(0,0);
                 break;
 
+            case R.id.nav_traffic_sign:
+                startActivity(new Intent(this, TrafficSignActivity.class));
+                overridePendingTransition(0,0);
+                break;
+
         }
 
         return false;
