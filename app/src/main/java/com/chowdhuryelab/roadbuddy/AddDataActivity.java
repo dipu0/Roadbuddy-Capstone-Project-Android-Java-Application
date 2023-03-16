@@ -1,5 +1,6 @@
 package com.chowdhuryelab.roadbuddy;
 
+import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
 
@@ -11,9 +12,12 @@ import android.location.LocationManager;
 import android.os.Bundle;
 import android.view.View;
 import android.widget.ImageButton;
+import android.widget.Toast;
 
 import com.chowdhuryelab.roadbuddy.databinding.ActivityAddDataBinding;
 import com.chowdhuryelab.roadbuddy.databinding.ActivityMainBinding;
+import com.google.android.gms.tasks.OnCompleteListener;
+import com.google.android.gms.tasks.Task;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 
@@ -38,12 +42,17 @@ public class AddDataActivity extends DrawerBaseActivity {
             public void onClick(View v) {
                 if (v.getId() == R.id.pothole) {
                     updatelocation();
-                    MyLatLng data = new MyLatLng(Double.parseDouble(String.valueOf(location.getLatitude())) , Double.parseDouble(String.valueOf(location.getLongitude())),"Pothole");
+                    MyLatLng data = new MyLatLng(Double.parseDouble(String.valueOf(location.getLatitude())), Double.parseDouble(String.valueOf(location.getLongitude())), "Pothole");
                     // Do add pothole data for pothole click
                     FirebaseDatabase database = FirebaseDatabase.getInstance();
                     DatabaseReference myRef = database.getReference("DangerousArea").child("MyCity");
-                    myRef.push().setValue(data);
-
+                    myRef.push().setValue(data)
+                            .addOnCompleteListener(new OnCompleteListener<Void>() {
+                                @Override
+                                public void onComplete(@NonNull Task<Void> task) {
+                                    Toast.makeText(getApplicationContext(),"Pothole added successful", Toast.LENGTH_SHORT).show();
+                                }
+                            });
 
                 }
             }
@@ -58,8 +67,13 @@ public class AddDataActivity extends DrawerBaseActivity {
                     // Do add pothole data for pothole click
                     FirebaseDatabase database = FirebaseDatabase.getInstance();
                     DatabaseReference myRef = database.getReference("DangerousArea").child("MyCity");
-                    myRef.push().setValue(data);
-
+                    myRef.push().setValue(data)
+                            .addOnCompleteListener(new OnCompleteListener<Void>() {
+                                @Override
+                                public void onComplete(@NonNull Task<Void> task) {
+                                    Toast.makeText(getApplicationContext(),"Speed Breaker added successful", Toast.LENGTH_SHORT).show();
+                                }
+                            });
 
                 }
             }

@@ -17,6 +17,8 @@ import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.graphics.BitmapFactory;
 import android.graphics.Color;
+import android.location.Address;
+import android.location.Geocoder;
 import android.location.Location;
 import android.location.LocationManager;
 import android.media.MediaPlayer;
@@ -25,6 +27,7 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
 import android.preference.PreferenceManager;
+import android.util.Log;
 import android.view.View;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -59,8 +62,10 @@ import com.karumi.dexter.listener.PermissionGrantedResponse;
 import com.karumi.dexter.listener.PermissionRequest;
 import com.karumi.dexter.listener.single.PermissionListener;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 import java.util.Random;
 
 public class MapsActivity extends DrawerBaseActivity implements OnMapReadyCallback, GeoQueryEventListener, IOnLoadLocationListener {
@@ -71,19 +76,19 @@ public class MapsActivity extends DrawerBaseActivity implements OnMapReadyCallba
     static MapsActivity instance;
     LocationRequest locationRequest;
     FusedLocationProviderClient fusedLocationProviderClient;
-    Marker currentUser;
+    Marker currentUser, oldUser;
     DatabaseReference myLocationRef;
     GeoFire geoFire;
     List<LatLng> dangerousArea = new ArrayList<>();
-    List<MyLatLng> updatedangerousArea = new ArrayList<>();
     List<MyLatLng> MapDangerousArea = new ArrayList<>();
     IOnLoadLocationListener listener;
 
     String lat = "", lon = "";
-
     private MediaPlayer alertSound;
     LocationManager locationManager = null;
     Location location;
+
+    SharedPreferences sharedpreferences;
 
     public static MapsActivity getInstance() {
         return instance;
@@ -110,6 +115,7 @@ public class MapsActivity extends DrawerBaseActivity implements OnMapReadyCallba
                                 .findFragmentById(R.id.map);
                         mapFragment.getMapAsync(MapsActivity.this);
 
+                       // storelocation();
                         updateLocation();
                         initArea();
                         settingGeoFire();
@@ -153,25 +159,6 @@ public class MapsActivity extends DrawerBaseActivity implements OnMapReadyCallba
                         listener.onLoadLocationFailed(databaseError.getMessage());
                     }
                 });
-//        updatedangerousArea.add(new MyLatLng(23.70039,90.43729,"SpeedBreaker"));
-//        updatedangerousArea.add(new MyLatLng(23.70044,90.43722,"Pothole"));
-//
-//       // we are submitting above location to our firebase data
-//        FirebaseDatabase.getInstance()
-//                .getReference("DangerousArea")
-//                .child("MyCity")
-//                .setValue(updatedangerousArea)
-//                .addOnCompleteListener(new OnCompleteListener<Void>() {
-//                    @Override
-//                    public void onComplete(@NonNull Task<Void> task) {
-//                        Toast.makeText(MapsActivity.this,"Updated!",Toast.LENGTH_SHORT).show();
-//                    }
-//                }).addOnFailureListener(new OnFailureListener() {
-//                    @Override
-//                    public void onFailure(@NonNull Exception e) {
-//                        Toast.makeText(MapsActivity.this,""+e.getMessage(),Toast.LENGTH_SHORT).show();
-//                    }
-//                });
        }
 
 
@@ -203,63 +190,106 @@ public class MapsActivity extends DrawerBaseActivity implements OnMapReadyCallba
         return PendingIntent.getBroadcast(this, 0, intent, PendingIntent.FLAG_UPDATE_CURRENT);
     }
 
+
+//    private void storelocation(){
+//
+//        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.M) {
+//            locationManager = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
+//        }
+//        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+//            // TODO: Consider calling
+//            //    ActivityCompat#requestPermissions
+//            // here to request the missing permissions, and then overriding
+//            //   public void onRequestPermissionsResult(int requestCode, String[] permissions,
+//            //                                          int[] grantResults)
+//            // to handle the case where the user grants the permission. See the documentation
+//            // for ActivityCompat#requestPermissions for more details.
+//            return;
+//        }
+//        location = locationManager.getLastKnownLocation(LocationManager.GPS_PROVIDER);
+//        String latlongString = location.getLatitude() + "," + location.getLatitude();
+//        sharedpreferences = getSharedPreferences("MYSETTINGS", Context.MODE_PRIVATE);
+//        SharedPreferences.Editor editor = sharedpreferences.edit();
+//        editor.putString("LocationKey", latlongString);
+//        editor.apply();
+//    }
+
     private void buildLocationRequest() {
         locationRequest = new LocationRequest();
         locationRequest.setPriority(LocationRequest.PRIORITY_HIGH_ACCURACY);
-        locationRequest.setInterval(10000);
-        locationRequest.setFastestInterval(2000);
-        locationRequest.setSmallestDisplacement(2f);
+        locationRequest.setInterval(500);
+        locationRequest.setFastestInterval(200);
+        locationRequest.setSmallestDisplacement(1f);
     }
 
-    /**
-     * Manipulates the map once available.
-     * This callback is triggered when the map is ready to be used.
-     * This is where we can add markers or lines, add listeners or move the camera. In this case,
-     * we just add a marker near Sydney, Australia.
-     * If Google Play services is not installed on the device, the user will be prompted to install
-     * it inside the SupportMapFragment. This method will only be triggered once the user has
-     * installed Google Play services and returned to the app.
-     */
     @Override
     public void onMapReady(GoogleMap googleMap) {
+
         mMap = googleMap;
         mMap.getUiSettings().setZoomControlsEnabled(true);
 
         for (MyLatLng mylatLng : MapDangerousArea){
+
             LatLng convert = new LatLng(mylatLng.getLatitude(), mylatLng.getLongitude());
             String type = new String(mylatLng.getType());
 
             if(type.equals("Pothole")){
-                mMap.addMarker(new MarkerOptions()
-                        .position(convert)
-                        .title("Pothole")
-                        .snippet("Snippet")
-                        .icon(BitmapDescriptorFactory.fromResource(R.drawable.pothole)));
+                try {
+                    mMap.addMarker(new MarkerOptions()
+                            .position(convert)
+                            .title("Pothole")
+                            .snippet(getAddress(convert))
+                            .icon(BitmapDescriptorFactory.fromResource(R.drawable.pothole)));
+                } catch (IOException e) {
+                    throw new RuntimeException(e);
+                }
             }
             if(type.equals("SpeedBreaker")){
-                mMap.addMarker(new MarkerOptions()
-                        .position(convert)
-                        .title("SpeedBreaker")
-                        .snippet("Snippet")
-                        .icon(BitmapDescriptorFactory.fromResource(R.drawable.speedbreaker)));
+                try {
+                    mMap.addMarker(new MarkerOptions()
+                            .position(convert)
+                            .title("SpeedBreaker")
+                            .snippet(getAddress(convert))
+                            .icon(BitmapDescriptorFactory.fromResource(R.drawable.speedbreaker)));
+                } catch (IOException e) {
+                    throw new RuntimeException(e);
+                }
             }
 
             mMap.addCircle(new CircleOptions().center(convert)
-                    .radius(1)
+                    .radius(10)
                     .strokeColor(Color.RED)
                     .fillColor(0x220000FF)
                     .strokeWidth(2.0f)
             );
-//            Toast.makeText(getApplicationContext(),"" + latlng.latitude , Toast.LENGTH_SHORT).show();
-            GeoQuery geoQuery = geoFire.queryAtLocation(new GeoLocation(convert.latitude, convert.longitude), 2f);
+
+            GeoQuery geoQuery = geoFire.queryAtLocation(new GeoLocation(convert.latitude, convert.longitude), 0.5f); //500m
             geoQuery.addGeoQueryEventListener(MapsActivity.this);
+
         }
 
+    }
 
-        // Add a marker in Dholaipar and move the camera
-//        LatLng dholaipar = new LatLng(23.70043, 90.43728);
-//        mMap.addMarker(new MarkerOptions().position(sydney).title("Marker in Sydney"));
-//        mMap.moveCameraf(CameraUpdateFactory.newLatLng(sydney));
+    private String getAddress(LatLng location) throws IOException {
+
+        Geocoder geocoder = new Geocoder(this, Locale.getDefault());
+        String address="";
+
+        List<Address> addresses = geocoder.getFromLocation(location.latitude, location.longitude, 1);
+        Address obj = addresses.get(0);
+        String  add = obj.getAddressLine(0);
+//optional
+          /*  add = add + "\n" + obj.getCountryName();
+            add = add + "\n" + obj.getCountryCode();
+            add = add + "\n" + obj.getAdminArea();
+            add = add + "\n" + obj.getPostalCode();
+            add = add + "\n" + obj.getSubAdminArea();
+            add = add + "\n" + obj.getLocality();
+            add = add + "\n" + obj.getSubThoroughfare();*/
+
+        Log.e("Location", "Address" + add);
+        address=add;
+        return address;
     }
 
     public void updateLocation(String latitude, String longitude) {
@@ -267,15 +297,7 @@ public class MapsActivity extends DrawerBaseActivity implements OnMapReadyCallba
 
             @Override
             public void run() {
-//                try {
-//                    Toast.makeText(getApplicationContext(),"Size: " + dangerousArea.size() , Toast.LENGTH_SHORT).show();
-//                    for(LatLng latlng : dangerousArea){
-////                        Toast.makeText(getApplicationContext(),"L:" + latlng.latitude , Toast.LENGTH_SHORT).show();
-//                    }
-//                }
-//                catch(Exception ex){
-//                    Toast.makeText(getApplicationContext(),"Databse Empty" + String.valueOf(ex) , Toast.LENGTH_SHORT).show();
-//                }
+
                 String s = latitude + " , " + longitude;
                 //Toast.makeText(getApplicationContext(),s,Toast.LENGTH_SHORT).show();
                 if(mMap != null){
@@ -284,13 +306,22 @@ public class MapsActivity extends DrawerBaseActivity implements OnMapReadyCallba
                             new GeoFire.CompletionListener() {
                                 @Override
                                 public void onComplete(String key, DatabaseError error) {
+
                                     if(currentUser != null) currentUser.remove();
                                     currentUser = mMap.addMarker(new MarkerOptions()
                                             .position(new LatLng(Double.parseDouble(latitude), Double.parseDouble(longitude)))
                                             .title("You"));
 
                                     mMap.animateCamera(CameraUpdateFactory
-                                            .newLatLngZoom(currentUser.getPosition(), 60.0f));
+                                            .newLatLngZoom(currentUser.getPosition(), 16f));
+
+                                    mMap.addCircle(new CircleOptions().center(currentUser.getPosition())
+                                            .radius(2)
+                                            .strokeColor(Color.BLUE)
+                                            .fillColor(0x95135748)
+                                            .strokeWidth(2.0f));
+                                    System.out.println("fffffffffffffff");
+
                                 }
                             }
                     );
@@ -298,13 +329,11 @@ public class MapsActivity extends DrawerBaseActivity implements OnMapReadyCallba
                 else{
                     Toast.makeText(getApplicationContext(), "mMap is NULL", Toast.LENGTH_SHORT).show();
                 }
-//                textView.setText(s);
-//                Toast.makeText(MainActivity.this, s, Toast.LENGTH_SHORT).show();
-//                LocationHelper object = new LocationHelper(latitude, longitude);
-//                mDatabase.push().setValue(object);
+
             }
         });
     }
+
 
     @Override
     public void onKeyEntered(String key, GeoLocation location) {
@@ -322,7 +351,7 @@ public class MapsActivity extends DrawerBaseActivity implements OnMapReadyCallba
 
         if(pop_up_dia){
             // Show the red alert
-            showRedDialog(this, "RoadBuddyr", "entered the dangerous area.");
+            showRedDialog(this, "RoadBuddy", "entered the dangerous area.");
 
         }
         if(alert){
@@ -365,13 +394,9 @@ public class MapsActivity extends DrawerBaseActivity implements OnMapReadyCallba
 
     @Override
     public void onLoadLocationSuccess(List<MyLatLng> latLngs) {
-        MapDangerousArea = new ArrayList<>();
+
         MapDangerousArea=(latLngs);
-//        for(MyLatLng myLatLng: latLngs)
-//        {
-//            LatLng convert = new LatLng(myLatLng.getLatitude(), myLatLng.getLongitude());
-//            dangerousArea.add(convert);
-//        }
+
         //Now, after dangerous Area is have data, We will call map display
         SupportMapFragment mapFragment = (SupportMapFragment) getSupportFragmentManager()
                 .findFragmentById(R.id.map);
@@ -404,7 +429,7 @@ public class MapsActivity extends DrawerBaseActivity implements OnMapReadyCallba
                 .setContentText(content)
                 .setAutoCancel(true)
                 .setSmallIcon(R.drawable.logo1)
-                .setLargeIcon(BitmapFactory.decodeResource(getResources(),R.mipmap.ic_launcher));
+                .setLargeIcon(BitmapFactory.decodeResource(getResources(),R.drawable.logo1));
         Notification notification = builder.build();
         notificationManager.notify(new Random().nextInt(), notification);
     }
