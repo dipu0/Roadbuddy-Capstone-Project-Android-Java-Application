@@ -23,6 +23,10 @@
             android:icon="@drawable/baseline_settings_24"
             android:title="Settings"/>
 
+        <item android:id="@+id/nav_logout"
+            android:icon="@drawable/ic_baseline_logout_24"
+            android:title="Logout"/>
+
     </group>
 
 </menu>

@@ -25,19 +25,25 @@
         <activity
             android:name=".SettingsActivity"
             android:exported="false" />
-        <activity
-            android:name=".SplashActivity"
-            android:exported="true">
-            <intent-filter>
-                <action android:name="android.intent.action.MAIN" />
 
-                <category android:name="android.intent.category.LAUNCHER" />
-            </intent-filter>
-        </activity>
         <activity
             android:name=".MapsActivity"
             android:label="@string/title_activity_maps" />
         <activity android:name=".MainActivity" />
+        <activity android:name=".Activities.SignupActivity"/>
+        <activity android:name=".Activities.DashBoard"/>
+        <activity android:name=".Activities.SetupProfileActivity"/>
+        <activity android:name=".Activities.OTPActivity"/>
+        <activity android:name=".Activities.PhoneNumberActivity"/>
+        <activity android:name=".Activities.SigninActivity"/>
+        <activity android:name=".Activities.SplashScreen"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN"/>
+                <category android:name="android.intent.category.LAUNCHER"/>
+            </intent-filter>
+        </activity>
+
         <activity
             android:name=".DrawerBaseActivity"
             android:exported="false" />

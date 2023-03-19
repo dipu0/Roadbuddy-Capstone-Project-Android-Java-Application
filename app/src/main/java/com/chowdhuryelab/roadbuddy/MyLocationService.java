@@ -23,7 +23,7 @@ public class MyLocationService extends BroadcastReceiver {
                 if(result!=null){
                     Location location = result.getLastLocation();
                     String locstring = "" + location.getLatitude() + " , " + location.getLongitude();
-                    Toast.makeText(context,locstring, Toast.LENGTH_SHORT).show();
+                  //  Toast.makeText(context,locstring, Toast.LENGTH_SHORT).show();
                     try{
                         MapsActivity.getInstance().updateLocation(String.valueOf(location.getLatitude()),
                                 String.valueOf(location.getLongitude()));

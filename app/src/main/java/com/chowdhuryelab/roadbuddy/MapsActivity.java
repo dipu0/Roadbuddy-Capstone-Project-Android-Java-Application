@@ -22,6 +22,7 @@ import android.location.Geocoder;
 import android.location.Location;
 import android.location.LocationManager;
 import android.media.MediaPlayer;
+import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
@@ -50,11 +51,14 @@ import com.google.android.gms.maps.model.CircleOptions;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
+import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.ValueEventListener;
+import com.google.firebase.storage.FirebaseStorage;
 import com.karumi.dexter.Dexter;
 import com.karumi.dexter.PermissionToken;
 import com.karumi.dexter.listener.PermissionDeniedResponse;
@@ -72,7 +76,6 @@ public class MapsActivity extends DrawerBaseActivity implements OnMapReadyCallba
 
     ActivityMapsBinding activityMapsBinding;
     private GoogleMap mMap;
-
     static MapsActivity instance;
     LocationRequest locationRequest;
     FusedLocationProviderClient fusedLocationProviderClient;
@@ -90,6 +93,13 @@ public class MapsActivity extends DrawerBaseActivity implements OnMapReadyCallba
 
     SharedPreferences sharedpreferences;
 
+    FirebaseAuth auth ;
+    FirebaseDatabase database ;
+    FirebaseStorage storage;
+    FirebaseUser account;
+    DatabaseReference reff;
+    String uid;
+
     public static MapsActivity getInstance() {
         return instance;
     }
@@ -104,6 +114,12 @@ public class MapsActivity extends DrawerBaseActivity implements OnMapReadyCallba
 
         instance = this;
 
+        database = FirebaseDatabase.getInstance();
+        storage = FirebaseStorage.getInstance();
+        auth = FirebaseAuth.getInstance();
+        uid = auth.getUid();
+
+
         Dexter.withActivity(this)
                 .withPermission(Manifest.permission.ACCESS_FINE_LOCATION)
                 .withListener(new PermissionListener() {
@@ -115,7 +131,6 @@ public class MapsActivity extends DrawerBaseActivity implements OnMapReadyCallba
                                 .findFragmentById(R.id.map);
                         mapFragment.getMapAsync(MapsActivity.this);
 
-                       // storelocation();
                         updateLocation();
                         initArea();
                         settingGeoFire();
@@ -227,6 +242,9 @@ public class MapsActivity extends DrawerBaseActivity implements OnMapReadyCallba
 
         mMap = googleMap;
         mMap.getUiSettings().setZoomControlsEnabled(true);
+        SharedPreferences sharedpreferences  = getSharedPreferences("MYSETTINGS", Context.MODE_PRIVATE);
+        String radius = sharedpreferences.getString("radius", "0.05");
+        double rad = Double.parseDouble(radius+"f");
 
         for (MyLatLng mylatLng : MapDangerousArea){
 
@@ -263,7 +281,7 @@ public class MapsActivity extends DrawerBaseActivity implements OnMapReadyCallba
                     .strokeWidth(2.0f)
             );
 
-            GeoQuery geoQuery = geoFire.queryAtLocation(new GeoLocation(convert.latitude, convert.longitude), 0.5f); //500m
+            GeoQuery geoQuery = geoFire.queryAtLocation(new GeoLocation(convert.latitude, convert.longitude), rad); //50m
             geoQuery.addGeoQueryEventListener(MapsActivity.this);
 
         }
@@ -293,6 +311,7 @@ public class MapsActivity extends DrawerBaseActivity implements OnMapReadyCallba
     }
 
     public void updateLocation(String latitude, String longitude) {
+
         MapsActivity.this.runOnUiThread(new Runnable() {
 
             @Override
@@ -302,7 +321,7 @@ public class MapsActivity extends DrawerBaseActivity implements OnMapReadyCallba
                 //Toast.makeText(getApplicationContext(),s,Toast.LENGTH_SHORT).show();
                 if(mMap != null){
 
-                    geoFire.setLocation("Key", new GeoLocation(Double.parseDouble(latitude), Double.parseDouble(longitude)),
+                    geoFire.setLocation(uid, new GeoLocation(Double.parseDouble(latitude), Double.parseDouble(longitude)),
                             new GeoFire.CompletionListener() {
                                 @Override
                                 public void onComplete(String key, DatabaseError error) {
@@ -320,8 +339,6 @@ public class MapsActivity extends DrawerBaseActivity implements OnMapReadyCallba
                                             .strokeColor(Color.BLUE)
                                             .fillColor(0x95135748)
                                             .strokeWidth(2.0f));
-                                    System.out.println("fffffffffffffff");
-
                                 }
                             }
                     );
@@ -339,7 +356,7 @@ public class MapsActivity extends DrawerBaseActivity implements OnMapReadyCallba
     public void onKeyEntered(String key, GeoLocation location) {
         Toast.makeText(getApplicationContext(),"Entering.." , Toast.LENGTH_SHORT).show();
                 // Send Notifications
-        SendNotification("Roadbuddy", String.format("%s entered the dangerous area ",key));
+        SendNotification("Roadbuddy", String.format("Entered the dangerous area "));
 
         // Load the state of the switch from SharedPreferences and update the UI
         SharedPreferences sharedPreferences  = getSharedPreferences("MYSETTINGS", Context.MODE_PRIVATE);
@@ -351,7 +368,7 @@ public class MapsActivity extends DrawerBaseActivity implements OnMapReadyCallba
 
         if(pop_up_dia){
             // Show the red alert
-            showRedDialog(this, "RoadBuddy", "entered the dangerous area.");
+            showRedDialog(this, "RoadBuddy", "Entered the dangerous area.");
 
         }
         if(alert){
@@ -442,12 +459,12 @@ public class MapsActivity extends DrawerBaseActivity implements OnMapReadyCallba
         builder.setIcon(android.R.drawable.ic_dialog_alert);
 
         // Set the positive button text and action
-        builder.setPositiveButton("OK", new DialogInterface.OnClickListener() {
-            public void onClick(DialogInterface dialog, int id) {
-
-                alertSound.stop();
-            }
-        });
+//        builder.setPositiveButton("", new DialogInterface.OnClickListener() {
+//            public void onClick(DialogInterface dialog, int id) {
+//
+//                alertSound.stop();
+//            }
+//        });
 
         // Create the AlertDialog object and set its properties
         AlertDialog dialog = builder.create();

@@ -13,11 +13,21 @@ import android.view.MenuItem;
 import android.view.View;
 import android.widget.FrameLayout;
 
+import com.chowdhuryelab.roadbuddy.Activities.DashBoard;
+import com.chowdhuryelab.roadbuddy.Activities.SigninActivity;
 import com.google.android.material.navigation.NavigationView;
+import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseUser;
+import com.google.firebase.database.FirebaseDatabase;
+import com.google.firebase.storage.FirebaseStorage;
 
 public class DrawerBaseActivity extends AppCompatActivity implements NavigationView.OnNavigationItemSelectedListener {
 
     DrawerLayout drawerLayout;
+    FirebaseAuth auth ;
+    FirebaseDatabase database ;
+    FirebaseStorage storage;
+    FirebaseUser account;
 
     @Override
     public void setContentView(View view) {
@@ -25,6 +35,13 @@ public class DrawerBaseActivity extends AppCompatActivity implements NavigationV
         FrameLayout container = drawerLayout.findViewById(R.id.activityContainer);
         container.addView(view);
         super.setContentView(drawerLayout);
+
+        database = FirebaseDatabase.getInstance();
+        storage = FirebaseStorage.getInstance();
+        auth = FirebaseAuth.getInstance();
+
+        String uid = auth.getUid();
+        String name1;
 
         Toolbar toolbar = drawerLayout.findViewById(R.id.toolBar);
         setSupportActionBar(toolbar);
@@ -65,6 +82,12 @@ public class DrawerBaseActivity extends AppCompatActivity implements NavigationV
             case R.id.nav_traffic_sign:
                 startActivity(new Intent(this, TrafficSignActivity.class));
                 overridePendingTransition(0,0);
+                break;
+
+            case R.id.nav_logout:
+                auth.signOut();
+                startActivity(new Intent(this , SigninActivity.class));
+                finish();
                 break;
 
         }
