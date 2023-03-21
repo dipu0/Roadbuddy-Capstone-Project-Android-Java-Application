@@ -8,13 +8,11 @@ import androidx.core.view.GravityCompat;
 import androidx.drawerlayout.widget.DrawerLayout;
 
 import android.content.Intent;
-import android.os.Bundle;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.FrameLayout;
 
-import com.chowdhuryelab.roadbuddy.Activities.DashBoard;
-import com.chowdhuryelab.roadbuddy.Activities.SigninActivity;
+import com.chowdhuryelab.roadbuddy.LoginActivities.SigninActivity;
 import com.google.android.material.navigation.NavigationView;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;

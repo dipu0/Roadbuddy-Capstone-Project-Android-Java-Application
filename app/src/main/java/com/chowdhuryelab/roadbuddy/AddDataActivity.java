@@ -1,7 +1,6 @@
 package com.chowdhuryelab.roadbuddy;
 
 import androidx.annotation.NonNull;
-import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
 
 import android.Manifest;
@@ -14,8 +13,8 @@ import android.view.View;
 import android.widget.ImageButton;
 import android.widget.Toast;
 
+import com.chowdhuryelab.roadbuddy.Models.MyLatLng;
 import com.chowdhuryelab.roadbuddy.databinding.ActivityAddDataBinding;
-import com.chowdhuryelab.roadbuddy.databinding.ActivityMainBinding;
 import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.Task;
 import com.google.firebase.database.DatabaseReference;

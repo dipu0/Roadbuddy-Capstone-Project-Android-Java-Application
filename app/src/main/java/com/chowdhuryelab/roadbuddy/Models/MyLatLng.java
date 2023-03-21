@@ -1,4 +1,4 @@
-package com.chowdhuryelab.roadbuddy;
+package com.chowdhuryelab.roadbuddy.Models;
 
 public class MyLatLng {
     private double latitude;

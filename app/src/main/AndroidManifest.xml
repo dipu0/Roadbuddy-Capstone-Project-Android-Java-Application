@@ -30,13 +30,12 @@
             android:name=".MapsActivity"
             android:label="@string/title_activity_maps" />
         <activity android:name=".MainActivity" />
-        <activity android:name=".Activities.SignupActivity"/>
-        <activity android:name=".Activities.DashBoard"/>
-        <activity android:name=".Activities.SetupProfileActivity"/>
-        <activity android:name=".Activities.OTPActivity"/>
-        <activity android:name=".Activities.PhoneNumberActivity"/>
-        <activity android:name=".Activities.SigninActivity"/>
-        <activity android:name=".Activities.SplashScreen"
+        <activity android:name=".LoginActivities.SignupActivity"/>
+        <activity android:name=".LoginActivities.SetupProfileActivity"/>
+        <activity android:name=".LoginActivities.OTPActivity"/>
+        <activity android:name=".LoginActivities.PhoneNumberActivity"/>
+        <activity android:name=".LoginActivities.SigninActivity"/>
+        <activity android:name=".SplashScreen"
             android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN"/>

@@ -1,7 +1,6 @@
 package com.chowdhuryelab.roadbuddy.Interface;
 
-import com.chowdhuryelab.roadbuddy.MyLatLng;
-import com.google.android.gms.maps.model.LatLng;
+import com.chowdhuryelab.roadbuddy.Models.MyLatLng;
 
 import java.util.List;
 

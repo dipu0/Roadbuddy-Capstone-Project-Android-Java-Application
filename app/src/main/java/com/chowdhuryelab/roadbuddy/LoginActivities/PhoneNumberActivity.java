@@ -1,4 +1,4 @@
-package com.chowdhuryelab.roadbuddy.Activities;
+package com.chowdhuryelab.roadbuddy.LoginActivities;
 
 import androidx.appcompat.app.AppCompatActivity;
 

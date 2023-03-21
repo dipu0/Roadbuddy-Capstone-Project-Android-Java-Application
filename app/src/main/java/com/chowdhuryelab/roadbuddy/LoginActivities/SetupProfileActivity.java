@@ -1,4 +1,4 @@
-package com.chowdhuryelab.roadbuddy.Activities;
+package com.chowdhuryelab.roadbuddy.LoginActivities;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -10,7 +10,6 @@ import android.net.Uri;
 import android.os.Bundle;
 import android.view.View;
 
-import com.bumptech.glide.Glide;
 import com.chowdhuryelab.roadbuddy.MapsActivity;
 import com.chowdhuryelab.roadbuddy.Models.User;
 import com.chowdhuryelab.roadbuddy.databinding.ActivitySetupProfileBinding;

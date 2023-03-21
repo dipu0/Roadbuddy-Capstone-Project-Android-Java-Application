@@ -1,4 +1,4 @@
-package com.chowdhuryelab.roadbuddy.Activities;
+package com.chowdhuryelab.roadbuddy;
 
 import androidx.appcompat.app.AppCompatActivity;
 
@@ -6,7 +6,7 @@ import android.content.Intent;
 import android.os.Bundle;
 import android.os.Handler;
 
-import com.chowdhuryelab.roadbuddy.MapsActivity;
+import com.chowdhuryelab.roadbuddy.LoginActivities.SigninActivity;
 import com.chowdhuryelab.roadbuddy.databinding.ActivitySplashScreenBinding;
 import com.google.firebase.auth.FirebaseAuth;
 
